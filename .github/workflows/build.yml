@@ -1,10 +1,10 @@
 name: Build and Release OpenWrt Plugin
 
 on:
-    push:
-      branches:
-        - test
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,22 +16,21 @@ jobs:
       - name: Setup dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential libncurses-dev flex bison libssl-dev
+          sudo apt install -y build-essential libncurses-dev flex bison libssl-dev xz-utils
 
       - name: Download OpenWrt SDK
         run: |
           wget https://downloads.openwrt.org/releases/22.03.1/targets/x86/64/openwrt-sdk-22.03.1-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz 
-          tar -xvf openwrt-sdk-*.tar.xz
-          mv openwrt-sdk* openwrt-sdk
+          tar -xvf openwrt-sdk-22.03.1-x86-64_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+          mv openwrt-sdk-22.03.1-x86-64_* openwrt-sdk
 
       - name: Copy plugin to SDK
         run: |
           cp -r package/myplugin openwrt-sdk/package/
 
-      - name: Configure SDK
+      - name: Configure SDK (no interactive)
         working-directory: openwrt-sdk
         run: |
-          make menuconfig # Optional: select your plugin under Utilities
           make defconfig
 
       - name: Compile plugin
@@ -40,12 +39,14 @@ jobs:
           make package/myplugin/compile V=99
 
       - name: Find and upload .ipk
+        id: find_ipk
         run: |
-          find openwrt-sdk/bin -name "*.ipk" -exec ls -l {} \;
-          find openwrt-sdk/bin -name "*.ipk" -exec cp {} . \;
+          IPK_FILE=$(find openwrt-sdk/bin -name "*.ipk")
+          echo "IPK_FILE=$IPK_FILE" >> $GITHUB_ENV
+          echo "Found IPK: $IPK_FILE"
 
       - name: Upload IPK as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-plugin-ipk
-          path: *.ipk
+          path: ${{ env.IPK_FILE }}
