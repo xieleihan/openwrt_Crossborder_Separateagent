@@ -1,0 +1,4 @@
+config device_proxy 'example'
+    option ip '192.168.1.100'
+    option proxy_ip '127.0.0.1'
+    option proxy_port '1080'
