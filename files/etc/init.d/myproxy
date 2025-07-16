@@ -1,11 +1,48 @@
 #!/bin/sh /etc/rc.common
 
 START=99
+STOP=10
+
+REDSOCKS_PID="/var/run/redsocks_myproxy.pid"
+SQUID_PID="/var/run/squid_myproxy.pid"
 
 start() {
+    echo "Starting myproxy service..."
     /usr/bin/myproxy_apply.sh
 }
 
+stop() {
+    echo "Stopping myproxy service..."
+    
+    # Clear iptables rules
+    iptables -t nat -F MYPROXY_REDIRECT 2>/dev/null
+    iptables -t nat -X MYPROXY_REDIRECT 2>/dev/null
+    iptables -t mangle -F MYPROXY_MARK 2>/dev/null
+    iptables -t mangle -X MYPROXY_MARK 2>/dev/null
+    
+    # Stop redsocks if running
+    if [ -f "$REDSOCKS_PID" ]; then
+        kill $(cat "$REDSOCKS_PID") 2>/dev/null
+        rm -f "$REDSOCKS_PID"
+    fi
+    
+    # Stop squid if running
+    if [ -f "$SQUID_PID" ]; then
+        kill $(cat "$SQUID_PID") 2>/dev/null
+        rm -f "$SQUID_PID"
+    fi
+    
+    # Remove temporary config files
+    rm -f "/tmp/redsocks_myproxy.conf"
+    rm -f "/tmp/squid_myproxy.conf"
+}
+
 restart() {
+    stop
+    sleep 2
     start
+}
+
+reload() {
+    restart
 }

@@ -1,0 +1,23 @@
+<%
+local util = require "luci.util"
+local sys = require "luci.sys"
+
+-- Get status information
+local status_output = sys.exec("/usr/bin/myproxy_status.sh")
+%>
+
+<div class="cbi-section">
+    <h3><%:MyProxy Service Status%></h3>
+    <div class="cbi-section-node">
+        <pre style="background-color: #f8f8f8; padding: 10px; border-radius: 5px; overflow-x: auto;">
+<%=status_output%>
+        </pre>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 10 seconds
+    setTimeout(function() {
+        location.reload();
+    }, 10000);
+</script>
